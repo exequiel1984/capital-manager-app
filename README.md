@@ -29,7 +29,7 @@ This repository serves as the frontend client for the Capital Manager ecosystem,
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/exequiel1984/capital-manager-app.git](https://github.com/exequiel1984/capital-manager-app.git)
+   git clone https://github.com/exequiel1984/capital-manager-app.git
    cd capital-manager-app
    ```
 
