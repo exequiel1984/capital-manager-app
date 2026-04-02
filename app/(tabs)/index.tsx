@@ -1,98 +1,214 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+import { LineChart, BarChart } from 'react-native-gifted-charts';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [loading, setLoading] = useState(true);
+  const [ticker, setTicker] = useState('');
+  
+  const [macdLine, setMacdLine] = useState([]);
+  const [signalLine, setSignalLine] = useState([]);
+  const [histogram, setHistogram] = useState([]);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const [lineMax, setLineMax] = useState(0);
+  const [lineMin, setLineMin] = useState(0);
+  const [barMax, setBarMax] = useState(0);
+  const [barMin, setBarMin] = useState(0);
+
+  // THE FIX: Increased the subtraction from 80 to 130 to perfectly account for 
+  // the app padding, the card padding, AND the Y-Axis numbers.
+  const chartWidth = Math.min(Dimensions.get('window').width - 130, 800); 
+
+  useEffect(() => {
+    fetch('http://3.131.128.17:3000/technical-analysis/macd/AAPL.BA')
+      .then((response) => response.json())
+      .then((data) => {
+        setTicker(data.ticker);
+
+        const formattedMacdLine = data.data.map((item: any) => ({
+          value: item.macdLine,
+          label: item.date.substring(5, 10), 
+        }));
+        
+        const formattedSignalLine = data.data.map((item: any) => ({
+          value: item.signalLine,
+        }));
+
+        const formattedHistogram = data.data.map((item: any) => ({
+          value: item.histogram,
+          frontColor: item.histogram >= 0 ? '#26a69a' : '#ef5350', 
+        }));
+        
+        // 1. Line Chart Math
+        const allLineVals = data.data.flatMap((item: any) => [item.macdLine, item.signalLine]);
+        const absoluteMaxLine = Math.max(...allLineVals.map(Math.abs));
+        const lineBoundary = absoluteMaxLine + (absoluteMaxLine * 0.1); 
+
+        setLineMax(lineBoundary); 
+        setLineMin(-lineBoundary); 
+
+        // 2. Bar Chart Math
+        const allBarVals = data.data.map((item: any) => item.histogram);
+        const absoluteMaxBar = Math.max(...allBarVals.map(Math.abs));
+        const barBoundary = absoluteMaxBar + (absoluteMaxBar * 0.1);
+
+        setBarMax(barBoundary);
+        setBarMin(-barBoundary);
+
+        setMacdLine(formattedMacdLine);
+        setSignalLine(formattedSignalLine);
+        setHistogram(formattedHistogram);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching data:', error);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2979FF" />
+        <Text style={styles.loadingText}>Analyzing Market Data...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{ticker} - MACD</Text>
+        <Text style={styles.subtitle}>Moving Average Convergence Divergence</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.chartTitle}>MACD & Signal Lines</Text>
+        <View style={styles.legend}>
+           <View style={[styles.legendDot, { backgroundColor: '#2979FF' }]} /><Text style={styles.legendText}>MACD</Text>
+           <View style={[styles.legendDot, { backgroundColor: '#FFA000', marginLeft: 15 }]} /><Text style={styles.legendText}>Signal</Text>
+        </View>
+        <LineChart
+          data={macdLine}
+          data2={signalLine}
+          width={chartWidth}
+          height={120} 
+          spacing={45}
+          initialSpacing={20}
+          endSpacing={30}    // <-- NEW: Adds a nice visual buffer to the right of the last point
+          scrollToEnd={true} // <-- NEW: Automatically pans to the newest data on load!
+          maxValue={lineMax}          
+          mostNegativeValue={lineMin} 
+          noOfSections={3} 
+          yAxisLabelWidth={40} // <-- THE FIX: Explicitly reserves 40px for the text
+          color1="#2979FF" 
+          color2="#FFA000" 
+          dataPointsColor1="#2979FF"
+          dataPointsColor2="#FFA000"
+          thickness1={3}
+          thickness2={3}
+          hideRules
+          yAxisTextStyle={{ color: '#888', fontSize: 10 }}
+          xAxisLabelTextStyle={{ color: '#888', fontSize: 10 }}
+        />
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.chartTitle}>MACD Histogram</Text>
+        <Text style={styles.subtitle}>Momentum Indicator</Text>
+        <View style={{ marginTop: 20 }}>
+          <BarChart
+            data={histogram}
+            width={chartWidth}
+            height={80} 
+            barWidth={12}
+            spacing={45}
+            initialSpacing={20}
+            endSpacing={30}    // <-- NEW: Must match the LineChart!
+            scrollToEnd={true} // <-- NEW: Must match the LineChart!
+            maxValue={barMax}          
+            mostNegativeValue={barMin} 
+            yAxisLabelWidth={40} // <-- THE FIX: Matches the LineChart above
+            roundedTop
+            roundedBottom
+            hideRules
+            xAxisThickness={1}
+            yAxisThickness={0}
+            yAxisTextStyle={{ color: '#888', fontSize: 10 }}
+            noOfSections={3}
+          />
+        </View>
+      </View>
+      <View style={{ height: 50 }} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#121212',
+    padding: 20,
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#121212',
+  },
+  loadingText: {
+    color: '#fff',
+    marginTop: 15,
+    fontSize: 16,
+  },
+  header: {
+    marginTop: 40,
+    marginBottom: 25,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#888888',
+    marginTop: 5,
+  },
+  card: {
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  chartTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  legend: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 15,
+    marginTop: 5,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 6,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  legendText: {
+    color: '#ccc',
+    fontSize: 12,
   },
 });
