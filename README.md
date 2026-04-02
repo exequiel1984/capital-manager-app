@@ -1,50 +1,53 @@
-# Welcome to your Expo app 👋
+# 📱 Capital Manager - Frontend Dashboard
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A cross-platform wealth management and financial aggregator interface. Built with React Native and Expo, this application delivers a seamless, responsive experience across both web browsers and mobile devices.
 
-## Get started
+This repository serves as the frontend client for the Capital Manager ecosystem, designed to eventually allow users to aggregate portfolios from various brokers (like Balanz, Bull Market, etc.) into a single, unified command center.
 
-1. Install dependencies
+## ✨ Core Features
 
+* **Cross-Platform Architecture:** Built mobile-first using Expo, but fully optimized to compile and render as a high-performance web application.
+* **Advanced Financial Visualization:** Implements complex, multi-layered technical indicators (like MACD, Signal Lines, and Histograms) using responsive SVG charting.
+* **Intelligent Data Scaling:** Custom mathematical boundary algorithms automatically frame extreme market volatility (deep negative/positive swings) perfectly within the viewport.
+* **Responsive Layout:** Dynamically calculates screen dimensions to provide a constrained, professional terminal view on desktop monitors, while enabling native horizontal scrolling and touch interactions on mobile screens.
+* **Dark Mode UI:** A sleek, professional dark theme designed to reduce eye strain during prolonged financial analysis.
+
+## 🚀 Tech Stack
+
+* **Framework:** React Native / Expo
+* **Language:** TypeScript
+* **Charting:** `react-native-gifted-charts` & `react-native-svg`
+* **Routing:** Expo Router (File-based routing)
+
+## 🛠️ Local Development & Setup
+
+### Prerequisites
+* Node.js (v20+)
+* The Capital Manager NestJS backend must be running (either locally or on your cloud server) with CORS enabled.
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/exequiel1984/capital-manager-app.git](https://github.com/exequiel1984/capital-manager-app.git)
+   cd capital-manager-app
+   ```
+
+2. **Install core dependencies:**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. **Install Expo-specific modules:**
    ```bash
-   npx expo start
+   npx expo install react-native-web react-dom @expo/metro-runtime react-native-svg expo-linear-gradient
    ```
 
-In the output, you'll find options to open the app in a
+4. **Start the development server (Web Mode):**
+   ```bash
+   npm run web
+   ```
+This will launch the Metro bundler and automatically open the application in your default web browser at http://localhost:8081.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🔗 Architecture Note
+This frontend application is completely decoupled from the database layer. It relies entirely on the capital-manager NestJS API to fetch real-time market data, process technical analysis algorithms, and manage user portfolios.
